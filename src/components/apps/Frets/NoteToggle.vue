@@ -9,16 +9,17 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { darkenHexColor, DEFAULT_COLORS, midiToNote } from './utils';
+import { darkenHexColor, midiToNote } from './utils';
 
 
 const props = defineProps<{
   note: number
+  theme: string[]
 }>()
 const model = defineModel<boolean>({required: true})
 
 const color = computed(() => {
-  return DEFAULT_COLORS[props.note]
+  return props.theme[props.note]
 })
 
 const isHovered = ref(false)

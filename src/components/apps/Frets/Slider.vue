@@ -1,20 +1,22 @@
 <template>
-  <div class="container" style="display: flex; flex-direction: row; align-items: center;">
+  <div class="container">
     <input
         v-model="sliderModel"
         type="range"
         :min="min"
         :max="max"
-        style="flex: 1;"
         @pointerdown="handlePointerDown"
         @pointerup="handlePointerUp"
+        class="slider"
       /> 
-      <p style="position: absolute; align-self: flex-end;" :style="computedStyle">{{ label ? `${label}` : '' }}: {{ normalize && model ? normalizeNumber(model, normalize.min, normalize.max) : model }}</p>
+      <p :style="computedStyle">
+        {{ label ? `${label}` : '' }}: {{ normalize && model ? normalizeNumber(model, normalize.min, normalize.max) : model }}
+      </p>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { normalizeNumber } from './utils';
 
 const props = withDefaults(defineProps<{
@@ -36,7 +38,7 @@ watch(sliderModel, () => {
   model.value = parseInt(sliderModel.value, 10)
   showNumber.value = true
   callTimeout()
-}, { immediate: true })
+})
 
 const computedStyle = computed(() => {
   if (showNumber.value) {
@@ -63,17 +65,36 @@ function callTimeout() {
     }, 500)  
   }
 }
-
 </script>
 
 <style scoped>
 .container {
+  flex: 1;
   margin: 5px;
-  width: 100%;
-  max-width: 500px;
+  margin-top: 12px;
+
+  display: flex; 
+  flex-direction: row; 
+  align-items: center;
+}
+
+.slider {
+  
+  margin-top: 3px;
+  flex: 1;
+  cursor: pointer;
+  outline: none;
+  opacity: 0.85;
+  transition: opacity .2s
+}
+
+.slider:hover {
+  opacity: 1; /* Fully shown on mouse-over */
 }
 
 p {
   user-select: none;
+  position: absolute; 
+  align-self: flex-end;
 }
 </style>

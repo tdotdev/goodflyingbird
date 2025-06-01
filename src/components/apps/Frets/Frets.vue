@@ -2,17 +2,9 @@
   <FretInstance
     :config="{
       scale: [0,2,3,5,6,7,9],
-      tuning: eightStringGuitar,
-      fretCount: 28,
-      scaleWidth: 200
-    }"
-  />
-  <div style="min-height: 100px;"></div>
-  <FretInstance
-    :config="{
-      scale: [],
       tuning: eStandardGuitar,
       fretCount: 22,
+      scaleWidth: 200
     }"
   />
   <!--

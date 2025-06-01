@@ -1,7 +1,106 @@
 
 
 // map[midi value % 12]
-export const DEFAULT_COLORS = [
+const RAINBOW_PALETTE = [
+  "#ff4b4b", // red
+  "#ff914b", // orange
+  "#ffc94b", // yellow
+  "#d4ff4b", // yellow-green
+  "#7dff4b", // green
+  "#4bff91", // teal-green
+  "#4bffd4", // aqua
+  "#4bc9ff", // sky blue
+  "#4b91ff", // blue
+  "#7d4bff", // indigo
+  "#c94bff", // violet
+  "#ff4bd4"  // magenta-pink
+];
+
+const BLUE_PALETTE = [
+  "#d0e7ff",
+  "#a8cfff",
+  "#80b7ff",
+  "#589fff",
+  "#3187ff",
+  "#096fff",
+  "#0060e6",
+  "#0052cc",
+  "#0044b3",
+  "#003699",
+  "#002880",
+  "#001a66"
+];
+
+const RED_PALETTE = [
+  "#ffd6d6",
+  "#ffb3b3",
+  "#ff8f8f",
+  "#ff6b6b",
+  "#ff4747",
+  "#ff2323",
+  "#e60000",
+  "#cc0000",
+  "#b30000",
+  "#990000",
+  "#800000",
+  "#660000"
+];
+
+const BOY_PALETTE = [
+  "#4b9bff",
+  "#337fff",
+  "#1a62ff",
+  "#0055cc",
+  "#ffaa33",
+  "#ff991a",
+  "#ff8000",
+  "#e67300",
+  "#ffe766",
+  "#ffdd33",
+  "#ffd700",
+  "#e6c200"
+];
+
+const CANDY_PALETTE = [
+  "#ff99cc",
+  "#ff66b3",
+  "#ff33aa",
+  "#cc33ff",
+  "#9966ff",
+  "#6699ff",
+  "#66ccff",
+  "#66ffff",
+  "#66ffcc",
+  "#99ffcc",
+  "#ccffe6",
+  "#ffffff"
+];
+
+const EARTH_PALETTE = [
+  "#7a5230",
+  "#a3753b",
+  "#cfa44e",
+  "#e2c290",
+  "#668c3e",
+  "#7abf5c",
+  "#a9e085",
+  "#d4f2b0",
+  "#7db9d7",
+  "#4a90a4",
+  "#2f6f87",
+  "#1f4d61"
+];
+
+export const PALETTES: Record<string, string[]> = {
+  'Rainbow': RAINBOW_PALETTE,
+  'Blue': BLUE_PALETTE,
+  'Red': RED_PALETTE,
+  'Cinematic': BOY_PALETTE,
+  'Candy': CANDY_PALETTE,
+  'Earth': EARTH_PALETTE,
+}
+
+/*[
   "#aaaaaa", // C       neutral gray (base/root) 
   "#f794e4", // C#/Db   bright gold
   "#94dee3", // D       soft gray
@@ -14,7 +113,7 @@ export const DEFAULT_COLORS = [
   "#6699ff", // A       light blue
   "#3366cc", // A#/Bb   deeper blue
   "#66ffeb"  // B       minty green
-]
+]*/
 
 export const CHROMATIC_SCALE = [0,1,2,3,4,5,6,7,8,9,10,11]
 
@@ -50,7 +149,7 @@ export function noteToMidiBase(note: string) {
     case 'B':
       return 11
     default:
-      return 0
+      return -1
   }
 }
 

@@ -1,6 +1,6 @@
 <template>
 <div class="container">
-  <div class="inner" style="display: flex; flex-direction: row;" v-if="true === false">
+  <div class="inner" style="display: flex; flex-direction: row; flex-wrap: wrap;">
     <RouterLink class="link" to="/">Home</RouterLink>
     <span class="break">•</span>
     <RouterLink class="link" to="/fretgod">Fret God</RouterLink>
@@ -10,7 +10,6 @@
     <RouterLink class="link" to="/supercircle">Super Circle</RouterLink>
     <span class="break">•</span>
     <RouterLink class="link" to="/mbrot">Mandelbrot Viewer</RouterLink>
-    <span class="break">•</span>
     <!--<RouterLink class="link" to="/gametwo">Game 2</RouterLink>
     <span class="break">•</span>
     <RouterLink class="link" to="/mattmcdade">Matt McDade</RouterLink>-->

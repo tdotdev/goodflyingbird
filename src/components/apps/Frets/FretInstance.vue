@@ -1,17 +1,23 @@
 <template>
-  <div>
-    <canvas ref="canvas" :width="dim.width" :height="dim.height">
-    </canvas>
-    <div class="controls">
-      <div style="display: flex; flex-direction: row; justify-content: space-evenly; max-width: 500px;">
+  <div class="container">
+    <div class="canvasContainer">
+      <canvas ref="canvas" :width="dim.width" :height="dim.height">
+      </canvas>
+    </div>
+    <div class="controls" style="max-width: 800px;">
+      <div style="display: flex; flex-direction: row; justify-content: flex-start; flex-wrap: wrap; align-items: center;">
         <NoteToggle v-for="(toggle, i) in toggles"
           v-model="toggle.value" :note="i"
+          :theme="selectedTheme"
         />
-      </div>    
-      <div style="display: flex; flex-direction: column; justify-content: flex-start; max-height: 25px; margin-top: 20px;">
-        <Slider v-model="numFrets" label="Frets" :min="0" :max="63"/>
-        <Slider v-model="scaleLength" label="Scale Length" :min="dim.width * .2" :max="dim.width*2" :normalize="{min: 1, max: 100}"/>
-        <Slider v-model="scaleWidth" label="Neck Width" :min="dim.height * .2":normalize="{min: 1, max: 100}" :max="dim.height*.75" />
+        <Select v-model="selectedTheme" :options="themeOptions" style="margin-left: auto;"/>
+        <Tuning v-model="tuningModel"/>
+      </div>
+      
+      <div style="display: flex; flex-direction: row; justify-content: flex-start; flex-wrap: wrap; align-items: center;">
+        <Slider v-model="numFrets" label="Frets" :min="0" :max="32"/>
+        <Slider v-model="scaleLength" label="Scale Length" :min="1" :max="4000" :normalize="{min: 1, max: 100}"/>
+        <Slider v-model="scaleWidth" label="Neck Width" :min="1" :normalize="{min: 1, max: 100}" :max="1000" />
       </div>
       <div v-if="debug">
         <button @click="() => {const c = getContext(); clear(c!)}">clear</button>
@@ -23,11 +29,14 @@
 
 <script setup lang="ts">
 
-import { computed, onMounted, reactive, ref, useTemplateRef, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useTemplateRef, watch } from 'vue';
 import { FretConfig, NoteMarker } from './Frets';
-import { CHROMATIC_SCALE, DEFAULT_COLORS, distanceFretFromNut, midiToNote } from './utils';
+import { CHROMATIC_SCALE, distanceFretFromNut, midiToNote, PALETTES } from './utils';
 import NoteToggle from './NoteToggle.vue';
 import Slider from './Slider.vue';
+import Select from './Select.vue';
+import Tuning from './Tuning.vue';
+
 
 const canvas = useTemplateRef<HTMLCanvasElement>('canvas')
 const props = defineProps<{
@@ -39,6 +48,14 @@ const debug = ref(false)
 const toggles = CHROMATIC_SCALE.map((note) => {
   return ref(props.config.scale.includes(note))
 })
+const themeOptions = Object.keys(PALETTES).map((e, i) => {
+  return {
+    label: e,
+    value: PALETTES[e]
+  }
+})
+const selectedTheme = ref<string[]>(themeOptions[0].value)
+const tuningModel = ref("EADGBE")
 
 const numFrets = ref(props.config.fretCount ?? 24)
 
@@ -50,12 +67,33 @@ const scale = computed(() => {
   }).filter((e) => e !== undefined)
 })
 
-watch([scale, numFrets, scaleLength, scaleWidth], () => {
+watch([scale, numFrets, scaleLength, scaleWidth, selectedTheme], () => {
   pipeline()
 })
 
 onMounted(() => {
+  window.addEventListener('resize', resizeCanvas)
   pipeline()
+})
+
+function resizeCanvas() {
+  const canvasEl = canvas.value
+  const container = canvasEl?.parentElement
+  if (!canvasEl || !container) return
+
+  const rect = container.getBoundingClientRect()
+  canvasEl.width = rect.width
+  canvasEl.height = rect.height
+
+  dim.width = rect.width
+  dim.height = rect.height
+  nextTick(() => {
+    pipeline()
+  })
+}
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', resizeCanvas)
 })
 
 const tuning = (() => {
@@ -88,12 +126,14 @@ function clampX(x: number, offset=0) {
 }
 
 function clampY(y: number, offset=0) {
-  if (y < 0) {
+  if (y < offset) {
     return 0
   }
+  /*
   else if (y > dim.height) {
     return dim.height
-  } else {
+  }*/ 
+ else {
     return y
   }
 }
@@ -157,7 +197,7 @@ function drawNoteMarkers(ctx: CanvasRenderingContext2D, scale: number[]) {
           const r = 8
           ctx.beginPath();
           ctx.arc(clampX(px, r), clampY(py, r), r, 1, 360);
-          ctx.fillStyle = DEFAULT_COLORS[currentMidiNoteBase]
+          ctx.fillStyle = selectedTheme.value[currentMidiNoteBase]
           ctx.fill();
           ctx.stroke();
           ctx.fillStyle = "#000000"
@@ -254,6 +294,7 @@ function drawFrets(ctx: CanvasRenderingContext2D) {
 <style scoped>
 .main {
   background-color: red;
+  touch-action: manipulation;
 }
 .title {
   font-family: sans-serif;
@@ -268,5 +309,18 @@ function drawFrets(ctx: CanvasRenderingContext2D) {
 }
 .controls {
   margin: 10px;
+}
+
+.canvasContainer {
+  width: 100%;
+  position: relative;
+  height: 50%;
+  max-width: 1920px;
+}
+
+canvas {
+  width: 100%;
+  height: 100%;
+  display: block; /* prevent scrollbars */
 }
 </style>

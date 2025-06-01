@@ -1,7 +1,7 @@
 <template>
 <div class="container">
   <div style="display: flex; flex-direction: column;">
-    <p>Welcome to the good flying bird</p>
+    <p>goodflyingbird.com</p>
     <pre>
       ⠀⢀⣠⠴⠒⠒⠒⠒⠒⠶⠦⠤⠴⠒⠚⠉⣰⠟⠁⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⢀⡞⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠒⡿⠃⠀⠀⠀⠀⠀⠀⠀⠀
