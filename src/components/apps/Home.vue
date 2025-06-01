@@ -33,9 +33,9 @@
 
 <style scoped>
 .container {
+  color: white;
   display: flex;
   justify-content: center;
   flex-direction: row;
-  color: white;
 }
 </style>

@@ -14,15 +14,15 @@ import Frets from './components/apps/Frets/Frets.vue'
 const routes = [
   { 
     path: '/', 
-    component: Frets,
-  },
-  { 
-    path: '/r', 
     component: Home,
   },
   {
     path: '/bluecondition',
     component: BlueConditionVue
+  },
+  { 
+    path: '/fretgod', 
+    component: Frets,
   },
   { 
     path: '/mbrot', 

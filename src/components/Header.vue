@@ -1,17 +1,19 @@
 <template>
 <div class="container">
-  <div class="inner" style="display: flex; flex-direction: row;">
+  <div class="inner" style="display: flex; flex-direction: row;" v-if="true === false">
     <RouterLink class="link" to="/">Home</RouterLink>
     <span class="break">•</span>
-    <RouterLink class="link" to="/bluecondition">The Blue Condition</RouterLink>
+    <RouterLink class="link" to="/fretgod">Fret God</RouterLink>
     <span class="break">•</span>
-    <RouterLink class="link" to="/gametwo">Game 2</RouterLink>
+    <RouterLink class="link" to="/bluecondition">The Blue Condition</RouterLink>
     <span class="break">•</span>
     <RouterLink class="link" to="/supercircle">Super Circle</RouterLink>
     <span class="break">•</span>
     <RouterLink class="link" to="/mbrot">Mandelbrot Viewer</RouterLink>
     <span class="break">•</span>
-    <RouterLink class="link" to="/mattmcdade">Matt McDade</RouterLink>
+    <!--<RouterLink class="link" to="/gametwo">Game 2</RouterLink>
+    <span class="break">•</span>
+    <RouterLink class="link" to="/mattmcdade">Matt McDade</RouterLink>-->
   </div>
 </div>
 </template>

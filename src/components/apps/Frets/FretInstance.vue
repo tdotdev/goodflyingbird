@@ -1,122 +1,171 @@
 <template>
   <div>
-  <p class="title">{{  props.scaleTitle }}</p>
-  <canvas ref="canvas" :width="dim.width" :height="dim.height">
-  </canvas>
+    <canvas ref="canvas" :width="dim.width" :height="dim.height">
+    </canvas>
+    <div class="controls">
+      <div style="display: flex; flex-direction: row; justify-content: space-evenly; max-width: 500px;">
+        <NoteToggle v-for="(toggle, i) in toggles"
+          v-model="toggle.value" :note="i"
+        />
+      </div>    
+      <div style="display: flex; flex-direction: column; justify-content: flex-start; max-height: 25px; margin-top: 20px;">
+        <Slider v-model="numFrets" label="Frets" :min="0" :max="63"/>
+        <Slider v-model="scaleLength" label="Scale Length" :min="dim.width * .2" :max="dim.width*2" :normalize="{min: 1, max: 100}"/>
+        <Slider v-model="scaleWidth" label="Neck Width" :min="dim.height * .2":normalize="{min: 1, max: 100}" :max="dim.height*.75" />
+      </div>
+      <div v-if="debug">
+        <button @click="() => {const c = getContext(); clear(c!)}">clear</button>
+        <button @click="() => {const c = getContext(); draw(c!)}">draw</button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 
-import { computed, onMounted, reactive, ref, useTemplateRef } from 'vue';
-import { NoteMarker } from './Frets';
+import { computed, onMounted, reactive, ref, useTemplateRef, watch } from 'vue';
+import { FretConfig, NoteMarker } from './Frets';
+import { CHROMATIC_SCALE, DEFAULT_COLORS, distanceFretFromNut, midiToNote } from './utils';
+import NoteToggle from './NoteToggle.vue';
+import Slider from './Slider.vue';
 
-const canvas = useTemplateRef('canvas')
-
+const canvas = useTemplateRef<HTMLCanvasElement>('canvas')
 const props = defineProps<{
-  scale: NoteMarker[]
-  scaleTitle: string
-  frets?: number,
-  strings?: number[]
-  neckLength?: number
-  neckWidth?: number
+  config: FretConfig
 }>()
+const scaleLength = ref(props.config.scaleLength ?? 1500)
+const scaleWidth = ref(props.config.scaleWidth ?? 120)
+const debug = ref(false)
+const toggles = CHROMATIC_SCALE.map((note) => {
+  return ref(props.config.scale.includes(note))
+})
+
+const numFrets = ref(props.config.fretCount ?? 24)
+
+const scale = computed(() => {
+  return toggles.map((e, i) => {
+    if (e.value) {
+      return i
+    }
+  }).filter((e) => e !== undefined)
+})
+
+watch([scale, numFrets, scaleLength, scaleWidth], () => {
+  pipeline()
+})
+
+onMounted(() => {
+  pipeline()
+})
+
+const tuning = (() => {
+  let tune = props.config.tuning ?? [40, 45, 50, 55, 59, 64] 
+  tune = tune.reverse()
+  return tune
+})()
+
+
+//const noteMarkerOffset = 10
+const fretMarkers = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24, 27]
+const x = 50
+const y = 20
+
+const dim = reactive({
+  width: window.innerWidth,
+  height: 250
+})
+
+function clampX(x: number, offset=0) {
+  if (x < offset) {
+    return offset
+  }
+  /*else if (x > dim.width) {
+    return dim.width
+  }*/ 
+  else {
+    return x
+  }
+}
+
+function clampY(y: number, offset=0) {
+  if (y < 0) {
+    return 0
+  }
+  else if (y > dim.height) {
+    return dim.height
+  } else {
+    return y
+  }
+}
 
 function clear(ctx: CanvasRenderingContext2D) {
   ctx.clearRect(0,0,ctx.canvas.width, ctx.canvas.height)
 }
 
-const numFrets = props.frets ?? 22
-console.log(numFrets)
-let strings = props.strings ?? [40, 45, 50, 55, 59, 64]
-strings = strings.reverse()
-
-const x = 50
-const y = 50
-
-const dim = reactive({
-  width: 1500,
-  height: 225
-})
-const neckLength = props.neckLength ?? 1100
-const neckWidth = props.neckWidth ?? 120
-
-function midiToNoteString(midiNote: number): string {
-  const noteNames = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"]
-  const noteIndex = midiNote % 12;
-  const octave = Math.floor(midiNote / 12) - 1; // MIDI note 0 is C-1
-  return `${noteNames[noteIndex]}`//${octave}`
-}
-
-const noteToDefaultColorMap = {
-  "C":  "#AAAAAA", // neutral gray (base/root)
-  "C#": "#FFD700", // bright gold
-  "D":  "#999999", // soft gray
-  "Eb": "#FFA500", // orange
-  "E":  "#FFFF66", // soft yellow
-  "F":  "#FF6666", // soft red
-  "F#": "#FF9966", // orange-pink
-  "G":  "#66CC66", // light green
-  "Ab": "#33AA77", // teal-green
-  "A":  "#6699FF", // light blue
-  "Bb": "#3366CC", // deeper blue
-  "B":  "#66FF99"  // minty green
-} as any;
-function noteToDefaultColor(note: string) {
-  return noteToDefaultColorMap[note] as string
-}
-
-
-onMounted(() => {
+function pipeline() {
   if (!canvas.value) {
-      console.log('no canvas')
-      return
+    console.log('no canvas')
+    return
   }
-
   const ctx = canvas.value.getContext('2d')
-
   if (!ctx) {
-      console.log('no context')
-      return
+    console.log('no context')
+    return
   }
+  //clear(ctx)
   draw(ctx)
-})
-
+}
 
 function draw(ctx: CanvasRenderingContext2D) {
   drawBackground(ctx)
   drawBoard(ctx)
   drawNut(ctx)
-  drawMarkers(ctx)
+  drawFretMarkers(ctx)
   drawFrets(ctx)
   drawBridge(ctx)
   drawStrings(ctx)
-  drawNoteOccurences(ctx, props.scale)
+  drawNoteMarkers(ctx, scale.value)
 }
 
-function drawNoteOccurences(ctx: CanvasRenderingContext2D, scale: NoteMarker[]) {
-  const offset = neckWidth / strings.length
-  for (let i=0; i < strings.length; i++) {
+function getContext() {
+  if (!canvas.value) {
+    console.log('no canvas')
+    return null
+  }
+  const ctx = canvas.value.getContext('2d')
+  if (!ctx) {
+    console.log('no context')
+    return null
+  }
+  return ctx
+}
+
+function drawNoteMarkers(ctx: CanvasRenderingContext2D, scale: number[]) {
+  const offset = scaleWidth.value / tuning.length
+  for (let i=0; i < tuning.length; i++) {
       const py = (y + i * offset) + offset / 2
-      for (let j=0; j < numFrets+1; j++) {
-        const midi = strings[i] + j
-        const note = midiToNoteString(midi)
-        const matched = scale.find((e) => e.note === note)
-        if (matched) {
-          const d1 = distanceFretFromNut(j)
-          const d2 = distanceFretFromNut(j - 1)
+      for (let j=0; j < numFrets.value+1; j++) {
+        const currentMidiNote = tuning[i] + j
+        const currentMidiNoteBase = currentMidiNote % 12
+        //const note = midiToNoteString(midi)
+        //const matched = scale.find((e) => e.note === note)
+        const matched = scale.find((e) => e % 12 === currentMidiNoteBase )
+        if (matched !== undefined) {
+          const d1 = distanceFretFromNut(j, scaleLength.value)
+          const d2 = distanceFretFromNut(j - 1, scaleLength.value)
           const px = 1 + x + (d1 + d2) / 2
+          const r = 8
           ctx.beginPath();
-          ctx.arc(px, py, 8, 1, 360);
-          if (matched.color) {
-            ctx.fillStyle = matched.color
-          } else {
-            ctx.fillStyle = noteToDefaultColor(matched.note)
-          }
+          ctx.arc(clampX(px, r), clampY(py, r), r, 1, 360);
+          ctx.fillStyle = DEFAULT_COLORS[currentMidiNoteBase]
           ctx.fill();
           ctx.stroke();
           ctx.fillStyle = "#000000"
-          ctx.fillText(matched.note, px - (() => { return matched.note.length === 1 ? 4 : 6})(), py + 3)
+          const midiString = midiToNote(currentMidiNote)
+          ctx.fillText(midiString, 
+            clampX(px - (() => { return midiString.length === 1 ? 4 : 6})(), 4), 
+            clampY(py + 3, 8)
+          )
         }
       }
   }
@@ -125,7 +174,7 @@ function drawNoteOccurences(ctx: CanvasRenderingContext2D, scale: NoteMarker[]) 
 function drawBridge(ctx: CanvasRenderingContext2D) {
   ctx.fillStyle = "#dddddd"
   const w = 10
-  ctx.fillRect(x + neckLength - w/2, y, 10, neckWidth)
+  ctx.fillRect(x + scaleLength.value - w/2, y, w, scaleWidth.value)
   }
 
 
@@ -136,49 +185,45 @@ function drawBackground(ctx: CanvasRenderingContext2D) {
 
 function drawBoard(ctx: CanvasRenderingContext2D) {
   ctx.fillStyle = "#5D2608"
-  ctx.fillRect(x, y, distanceFretFromNut(numFrets + 1), neckWidth)
+  ctx.fillRect(x, y, distanceFretFromNut(numFrets.value + 1, scaleLength.value), scaleWidth.value)
 }
 
 function drawStrings(ctx: CanvasRenderingContext2D) {
-  const offset = neckWidth / strings.length
-  for (let i=0; i < strings.length; i++) {
+  const offset = scaleWidth.value / tuning.length
+  for (let i=0; i < tuning.length; i++) {
       const py = (y + i * offset) + offset / 2
       ctx.fillStyle = "#27171A"
-      ctx.fillRect(x, py, neckLength, 2)
+      ctx.fillRect(x, py, scaleLength.value, 2)
       //ctx.moveTo(x, py)
-      //ctx.lineTo(x + neckLength, py)
+      //ctx.lineTo(x + scaleLength.value, py)
       //ctx.stroke()
   }
 }
 
 function drawNut(ctx: CanvasRenderingContext2D) {
   ctx.fillStyle = "#dddddd"
-  ctx.fillRect(x, y, 10, neckWidth)
+  ctx.fillRect(x, y, 10, scaleWidth.value)
   ctx.fillStyle = "#cfcaba"
-  ctx.fillRect(x, y, 3, neckWidth)
-  ctx.fillRect(x + 8, y, 2, neckWidth)
+  ctx.fillRect(x, y, 3, scaleWidth.value)
+  ctx.fillRect(x + 8, y, 2, scaleWidth.value)
 }
 
-const markers = [
-  3, 5, 7, 9, 12, 15, 17, 19, 21, 24, 27
-]
-
-function drawMarkers(ctx: CanvasRenderingContext2D) {
-  for (let i=0; i < markers.length; i++) {
-    const m = markers[i]
-    if (m > numFrets) {
+function drawFretMarkers(ctx: CanvasRenderingContext2D) {
+  for (let i=0; i < fretMarkers.length; i++) {
+    const m = fretMarkers[i]
+    if (m > numFrets.value) {
       break
     }
     let [px, py] = getMarkerPosition(m)
     ctx.fillStyle = "#ffffff"
     if (m % 12 === 0) {
       ctx.beginPath();
-      ctx.arc(px, py - neckWidth/6, 6, 1, 360);
+      ctx.arc(px, py - scaleWidth.value/6, 6, 1, 360);
       ctx.fill();
       ctx.stroke();
       
       ctx.beginPath();
-      ctx.arc(px, py+neckWidth/6, 6, 1, 360);
+      ctx.arc(px, py+scaleWidth.value/6, 6, 1, 360);
       ctx.fill();
       ctx.stroke();
     } else {
@@ -191,24 +236,19 @@ function drawMarkers(ctx: CanvasRenderingContext2D) {
 }
 
 function getMarkerPosition(fret: number): [number, number] {
-  const d1 = distanceFretFromNut(fret)
-  const d2 = distanceFretFromNut(fret - 1)
-  return [1 + x + (d1 + d2) / 2,  y + neckWidth / 2]
+  const d1 = distanceFretFromNut(fret, scaleLength.value)
+  const d2 = distanceFretFromNut(fret - 1, scaleLength.value)
+  return [1 + x + (d1 + d2) / 2,  y + scaleWidth.value / 2]
 }
 
 function drawFrets(ctx: CanvasRenderingContext2D) {
-  for (let i=1; i <= numFrets; i++) {
-    const d = distanceFretFromNut(i)
+  for (let i=1; i <= numFrets.value; i++) {
+    const d = distanceFretFromNut(i, scaleLength.value)
     ctx.fillStyle = "#cfcaba"
-    ctx.fillRect(x + d, y, 3, neckWidth)
+    ctx.fillRect(x + d, y, 3, scaleWidth.value)
   }
 }
 
-function distanceFretFromNut(fretNum: number) {
-  // fretNum start at 1
-  return neckLength - (neckLength / (2 ** (fretNum / 12)))
-}
-  
 </script>
   
 <style scoped>
@@ -220,5 +260,13 @@ function distanceFretFromNut(fretNum: number) {
   position: absolute;
   margin-left: 10px;
   font-size: large;
+}
+.noteToggle {
+  background-color: blue;
+  margin: 2px;
+  padding: 5px;
+}
+.controls {
+  margin: 10px;
 }
 </style>
